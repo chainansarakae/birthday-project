@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบริหารจัดการสารสนเทศวันเกิดส่วนบุคคล (Birthday Portal Information System - BPS)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- QRCode JS Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sgs: {
+                            blue: '#003366',
+                            navy: '#002244',
+                            light: '#e6f0fa',
+                            accent: '#ff9900',
+                            gold: '#ffd700',
+                            teal: '#008080'
+                        }
+                    },
+                    fontFamily: {
+                        sarabun: ['Sarabun', 'sans-serif'],
+                        kanit: ['Kanit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
+        h1, h2, h3, h4, h5, h6, .font-kanit { font-family: 'Kanit', sans-serif; }
+        .flame {
+            width: 12px; height: 20px;
+            background: linear-gradient(to bottom, #fff 0%, #ffeb3b 30%, #ff9800 60%, #f44336 100%);
+            border-radius: 50% 50% 20% 20%;
+            box-shadow: 0 0 10px #ff9800, 0 0 20px #ffeb3b;
+            animation: flicker 0.1s infinite alternate;
+            transform-origin: center bottom;
+        }
+        @keyframes flicker {
+            0% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+            100% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #003366; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800">
+
+    <!-- VIEW 1: Entrance Landing Page -->
+    <div id="portal-landing-view" class="fixed inset-0 z-40 bg-gradient-to-br from-blue-50 via-sky-100 to-indigo-100 flex flex-col justify-between items-center p-6 overflow-y-auto">
+        <div class="absolute inset-0 pointer-events-none opacity-40 overflow-hidden">
+            <svg class="absolute w-full h-full" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M-100 200 C300 100, 600 400, 1500 100 L1500 900 L-100 900 Z" fill="url(#grad1)"/>
+                <path d="M-100 400 C400 300, 800 600, 1500 300 L1500 900 L-100 900 Z" fill="url(#grad2)" opacity="0.5"/>
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.2"/>
+                        <stop offset="100%" stop-color="#0284c7" stop-opacity="0.4"/>
+                    </linearGradient>
+                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#818cf8" stop-opacity="0.2"/>
+                        <stop offset="100%" stop-color="#0369a1" stop-opacity="0.3"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center text-center mt-6 mb-8 max-w-3xl">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-tr from-sgs-blue via-blue-700 to-indigo-900 rounded-full p-1 shadow-xl flex items-center justify-center mb-4 ring-4 ring-white/80">
+                <div class="w-full h-full rounded-full border-2 border-yellow-400/80 flex flex-col items-center justify-center text-yellow-300 bg-sgs-navy/90 p-2">
+                    <i class="fa-solid fa-cake-candles text-3xl sm:text-4xl text-sgs-accent animate-pulse"></i>
+                </div>
+            </div>
+            <h1 class="text-xl sm:text-3xl font-extrabold text-gray-800 font-kanit tracking-wide leading-tight drop-shadow-sm">
+                ระบบบริหารจัดการสารสนเทศวันเกิดส่วนบุคคล (Guest View)
+            </h1>
+            <h2 class="text-lg sm:text-2xl font-bold text-sgs-blue font-kanit mt-1">
+                Personal Birthday Portal Information System (BPS)
+            </h2>
+        </div>
+
+        <div class="relative z-10 w-full max-w-4xl my-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
+                <button onclick="openAuthModal('login')" class="group flex flex-col items-center text-center transition transform hover:-translate-y-2 hover:scale-105 w-full max-w-xs">
+                    <div class="w-full h-36 sm:h-40 bg-white/95 rounded-2xl shadow-lg border border-sky-100 flex flex-col items-center justify-center p-4 group-hover:shadow-2xl group-hover:border-sgs-blue transition relative overflow-hidden">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-500 flex items-center justify-center text-white text-3xl shadow-md mb-2">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <span class="text-sm sm:text-base font-bold text-gray-800 font-kanit group-hover:text-sgs-blue">งานผู้ใช้อวยพร</span>
+                    </div>
+                </button>
+                <button onclick="openAuthModal('login')" class="group flex flex-col items-center text-center transition transform hover:-translate-y-2 hover:scale-105 w-full max-w-xs">
+                    <div class="w-full h-36 sm:h-40 bg-white/95 rounded-2xl shadow-lg border border-sky-100 flex flex-col items-center justify-center p-4 group-hover:shadow-2xl group-hover:border-blue-600 transition relative overflow-hidden">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-3xl shadow-md mb-2">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <span class="text-sm sm:text-base font-bold text-gray-800 font-kanit group-hover:text-blue-600">ผู้ดูแลระบบ (Admin)</span>
+                    </div>
+                </button>
+                <button onclick="openAuthModal('login')" class="group flex flex-col items-center text-center transition transform hover:-translate-y-2 hover:scale-105 w-full max-w-xs">
+                    <div class="w-full h-36 sm:h-40 bg-white/95 rounded-2xl shadow-lg border border-sky-100 flex flex-col items-center justify-center p-4 group-hover:shadow-2xl group-hover:border-purple-600 transition relative overflow-hidden">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-purple-600 flex items-center justify-center text-white text-3xl shadow-md mb-2">
+                            <i class="fa-solid fa-crown text-yellow-300"></i>
+                        </div>
+                        <span class="text-sm sm:text-base font-bold text-gray-800 font-kanit group-hover:text-purple-700">เจ้าของวันเกิด<br>(Owner)</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="mt-8 bg-white/95 backdrop-blur p-6 rounded-2xl shadow-lg border border-indigo-100 max-w-md mx-auto text-center">
+                <h3 class="font-bold text-xs font-kanit text-sgs-blue mb-2 flex items-center justify-center">
+                    <i class="fa-solid fa-key text-sgs-accent mr-1.5"></i> ใส่รหัสคำอวยพร (สำหรับเปิดดูคำอวยพรแท้พิเศษ)
+                </h3>
+                <div class="flex gap-2">
+                    <input type="password" id="guest-secret-code" placeholder="กรอกรหัสลับคำอวยพร..." class="text-xs p-2 border border-gray-300 rounded flex-grow focus:ring-1 focus:ring-sgs-blue">
+                    <button onclick="verifySecretWishCode()" class="bg-sgs-blue hover:bg-sgs-navy text-white font-bold text-xs px-4 py-2 rounded transition">
+                        ตรวจสอบรหัส
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative z-10 text-center text-xs text-gray-500 mt-8">
+            <button onclick="enterPortalSection('dashboard')" class="bg-sgs-blue hover:bg-sgs-navy text-white font-bold px-6 py-2 rounded-full shadow-lg transition duration-200 flex items-center space-x-2 mx-auto mb-2">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>เข้าสู่แดชบอร์ดพอร์ทัลวันเกิด (Guest Mode)</span>
+            </button>
+            <p>© 2026 Birthday Portal System (BPS). All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <!-- Audio BGM Player -->
+    <audio id="bgm-player" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73229.mp3?filename=happy-birthday-155461.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-sgs-blue text-white shadow-md border-b-4 border-sgs-accent sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button onclick="showLandingView()" class="bg-white hover:bg-yellow-300 p-2 rounded-lg text-sgs-blue shadow-inner flex items-center justify-center transition" title="กลับหน้าแรก">
+                    <i class="fa-solid fa-house text-2xl text-sgs-blue"></i>
+                </button>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide font-kanit">ระบบบริหารจัดการสารสนเทศวันเกิดส่วนบุคคล</h1>
+                    <p class="text-xs text-blue-200">Personal Birthday Portal Information System (BPS)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-3 mt-2 sm:mt-0">
+                <button id="bgm-btn" onclick="toggleBGM()" class="bg-blue-900 hover:bg-blue-800 text-xs text-white px-3 py-1.5 rounded-full flex items-center space-x-1 border border-blue-400 transition duration-200">
+                    <i id="bgm-icon" class="fa-solid fa-music text-yellow-400"></i>
+                    <span id="bgm-text">เปิดเพลงประกอบ</span>
+                </button>
+
+                <div id="user-badge" class="hidden items-center bg-blue-950 px-3 py-1 rounded-md text-xs border border-blue-700">
+                    <span id="user-role-badge" class="font-bold mr-1.5 px-1.5 py-0.5 rounded text-[10px] bg-sgs-accent text-white">USER</span>
+                    <span id="user-name-display" class="font-medium text-white">Guest</span>
+                    <button onclick="logout()" class="ml-2 text-red-300 hover:text-red-100 font-bold" title="ออกจากระบบ">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+
+                <div id="auth-nav-btns" class="flex items-center space-x-2">
+                    <button onclick="openAuthModal('login')" class="bg-sgs-accent hover:bg-orange-600 text-white font-bold text-xs px-3 py-1.5 rounded shadow transition duration-200 flex items-center space-x-1">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>เข้าสู่ระบบ</span>
+                    </button>
+                    <button onclick="openAuthModal('register')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow transition duration-200 flex items-center space-x-1">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>สมัครสมาชิก</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- News Ticker -->
+    <div class="bg-sgs-navy text-yellow-300 text-xs py-1.5 px-4 flex items-center overflow-hidden border-b border-blue-900 justify-between">
+        <div class="flex items-center overflow-hidden w-full">
+            <div class="flex items-center font-bold px-2 text-sgs-accent whitespace-nowrap border-r border-blue-800 mr-2">
+                <i class="fa-solid fa-bullhorn mr-1.5 animate-bounce"></i> ประกาศระบบ:
+            </div>
+            <div class="overflow-hidden relative w-full">
+                <div id="ticker-text" class="whitespace-nowrap inline-block">ยินดีต้อนรับสู่ระบบวันเกิดส่วนตัว! ขอให้มีความสุขมากๆ ครับ/ค่ะ 💖</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-grow w-full relative">
+
+        <div id="login-required-overlay" class="bg-white rounded-2xl shadow-xl border-2 border-red-200 p-8 sm:p-12 text-center my-8 max-w-2xl mx-auto">
+            <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold font-kanit text-gray-800 mb-2">บังคับเข้าสู่ระบบ (Required Login)</h2>
+            <p class="text-sm text-gray-600 font-sarabun mb-6 leading-relaxed">
+                ขออภัยค่ะ/ครับ คุณยังไม่ได้เข้าสู่ระบบสารสนเทศ <br>
+                <span class="font-semibold text-sgs-blue">หน้าที่สอง (Dashboard)</span> จะเข้าถึงได้เมื่อคุณทำการ <b class="text-red-600">"เข้าสู่ระบบ"</b> แล้วเท่านั้น
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-3">
+                <button onclick="openAuthModal('login')" class="w-full sm:w-auto bg-sgs-blue hover:bg-sgs-navy text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition">
+                    เข้าสู่ระบบเพื่อใช้งาน
+                </button>
+                <button onclick="openAuthModal('register')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition">
+                    สมัครสมาชิกใหม่
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboard-protected-content" class="hidden">
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-sgs-blue via-blue-800 to-sgs-navy p-6 text-white relative">
+                    <div class="relative z-10 flex flex-col md:flex-row items-center justify-between">
+                        <div class="text-center md:text-left mb-4 md:mb-0">
+                            <span class="bg-yellow-400 text-sgs-navy font-bold text-xs px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Personal Birthday Dashboard</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold font-kanit">สุขสันต์วันเกิด! ขอให้มีความสุขมากๆ</h2>
+                            <p class="text-sm text-blue-100 mt-1">ระบบบริหารจัดการสารสนเทศวันเกิด, โปรไฟล์ส่วนตัว และเพลงประจำโปรไฟล์</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="scrollToSection('cake-section')" class="bg-sgs-accent hover:bg-orange-600 text-white font-bold text-sm px-4 py-2 rounded-lg shadow-md transition">เป่าเทียน</button>
+                            <button onclick="scrollToSection('guestbook-section')" class="bg-white text-sgs-blue hover:bg-gray-100 font-bold text-sm px-4 py-2 rounded-lg shadow-md transition">เขียนอวยพร</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD MENU GRID -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8">
+                <div class="border-b pb-3 mb-6 flex justify-between items-center">
+                    <h3 class="text-lg font-bold font-kanit text-sgs-blue flex items-center">
+                        <i class="fa-solid fa-list-check mr-2 text-sgs-accent"></i> DASHBOARD (แผงเมนูหลักระบบสารสนเทศวันเกิด)
+                    </h3>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-6 justify-items-center">
+                    <button onclick="scrollToSection('profile-walls-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-address-card text-3xl sm:text-4xl text-sgs-blue"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">หน้าโปรไฟล์เพลงส่วนตัว</span>
+                    </button>
+                    <button onclick="scrollToSection('announcements-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-bullhorn text-3xl sm:text-4xl text-amber-500"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">งานประกาศข่าวสาร</span>
+                    </button>
+                    <button onclick="scrollToSection('guestbook-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-comments text-3xl sm:text-4xl text-emerald-600"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">สมุดลงนามอวยพร</span>
+                    </button>
+                    <button onclick="scrollToSection('cake-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-cake-candles text-3xl sm:text-4xl text-pink-500"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">แท่นเค้ก & เป่าเทียน</span>
+                    </button>
+                    <button onclick="scrollToSection('minigame-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-gift text-3xl sm:text-4xl text-amber-500"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">เกมจับกล่องของขวัญ</span>
+                    </button>
+                    <button onclick="scrollToSection('gallery-section')" class="group flex flex-col items-center text-center p-4 bg-gray-50/50 hover:bg-blue-50/50 border border-gray-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-image text-3xl sm:text-4xl text-purple-600"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 font-kanit">แกลเลอรีความทรงจำ</span>
+                    </button>
+                    <button id="owner-dashboard-menu-btn" onclick="openOwnerMasterControlModal()" class="hidden group flex flex-col items-center text-center p-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-2xl w-full transition transform hover:-translate-y-1">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow border flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-crown text-3xl sm:text-4xl text-purple-700"></i>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-purple-900 font-kanit">ศูนย์ควบคุมระบบ (Owner)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION: หน้าโปรไฟล์เพลงและข้อมูลส่วนตัวแยกตามคน -->
+            <section id="profile-walls-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8 scroll-mt-20">
+                <div class="border-b pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                        <h3 class="text-xl font-bold font-kanit text-sgs-blue flex items-center">
+                            <i class="fa-solid fa-address-card text-sgs-accent mr-2"></i> หน้าโปรไฟล์และเพลงส่วนตัวของแต่ละคน (Personal Profile & Music Wall)
+                        </h3>
+                        <p class="text-xs text-gray-500">เลือกดูหน้าโปรไฟล์เฉพาะบุคคล แก้ไขชื่อ, รูปภาพ และวันเดือนปีเกิดจริงได้</p>
+                    </div>
+                    <button onclick="openMyProfileModal()" class="mt-2 sm:mt-0 bg-sgs-blue hover:bg-sgs-navy text-white text-xs font-bold px-3 py-2 rounded shadow transition">
+                        แก้ไขโปรไฟล์ของฉัน
+                    </button>
+                </div>
+
+                <div id="profile-tabs-container" class="flex flex-wrap gap-2 mb-6 border-b pb-4"></div>
+                <div id="profile-display-area" class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6"></div>
+            </section>
+
+            <!-- SECTION 1: Cake & Blow Candle -->
+            <section id="cake-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8 scroll-mt-20">
+                <div class="flex flex-col md:flex-row items-center justify-between border-b pb-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold font-kanit text-sgs-blue flex items-center">
+                            <i class="fa-solid fa-cake-candles text-sgs-accent mr-2"></i> แท่นเค้กอธิษฐานวันเกิด & ระบบเป่าเทียน (Interactive Cake)
+                        </h3>
+                        <p class="text-xs text-gray-500">คลิกที่เทียนเพื่อจุดหรือดับได้ตามต้องการ</p>
+                    </div>
+                    <div class="mt-3 md:mt-0 flex flex-wrap gap-2">
+                        <button onclick="relightAllCandles()" class="bg-amber-500 text-white font-bold text-xs px-3 py-2 rounded shadow">จุดเทียนทั้งหมด</button>
+                        <button onclick="extinguishAllCandles()" class="bg-gray-600 text-white font-bold text-xs px-3 py-2 rounded shadow">ดับเทียนทั้งหมด</button>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-b from-blue-50 to-indigo-50 rounded-xl p-8 flex flex-col items-center justify-center min-h-[360px] relative overflow-hidden border border-blue-100">
+                    <div class="flex space-x-4 mb-1 z-10" id="candles-container"></div>
+                    <div class="relative flex flex-col items-center z-0">
+                        <div class="w-32 h-12 bg-pink-300 rounded-t-xl border-b-4 border-pink-400 shadow-inner flex items-center justify-center relative">
+                            <div class="absolute inset-x-0 top-0 h-3 bg-white rounded-t-xl opacity-60"></div>
+                            <span class="text-pink-600 text-xs font-bold font-kanit">HAPPY</span>
+                        </div>
+                        <div class="w-48 h-16 bg-pink-400 border-b-4 border-pink-500 shadow-inner flex items-center justify-center relative">
+                            <div class="absolute inset-x-0 top-0 h-4 bg-white opacity-50 rounded-b-md"></div>
+                            <span class="text-white text-sm font-bold font-kanit tracking-widest">BIRTHDAY</span>
+                        </div>
+                        <div class="w-64 h-20 bg-pink-500 rounded-b-xl shadow-lg flex items-center justify-center relative">
+                            <div class="absolute inset-x-0 top-0 h-4 bg-yellow-200 opacity-60"></div>
+                        </div>
+                        <div class="w-72 h-4 bg-gray-300 rounded-full shadow-md mt-1"></div>
+                        <div class="w-24 h-6 bg-gray-200 rounded-b-lg shadow-sm"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: System Announcements -->
+            <section id="announcements-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8 scroll-mt-20">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold font-kanit text-sgs-blue">กระดานประกาศข่าวสาร</h3>
+                    <button id="add-announce-btn" onclick="openAnnounceModal()" class="hidden bg-sgs-blue text-white text-xs font-bold px-3 py-2 rounded shadow">เพิ่มประกาศ</button>
+                </div>
+                <div id="announcement-list" class="space-y-3"></div>
+            </section>
+
+            <!-- TWO COLUMN LAYOUT: Minigame & Guestbook -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <section id="minigame-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col justify-between scroll-mt-20">
+                    <div>
+                        <h3 class="text-xl font-bold font-kanit text-sgs-blue mb-4">มินิเกมจับกล่องของขวัญ</h3>
+                        <div class="grid grid-cols-3 gap-3 my-4" id="gift-boxes-container"></div>
+                    </div>
+                </section>
+
+                <section id="guestbook-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 scroll-mt-20">
+                    <h3 class="text-xl font-bold font-kanit text-sgs-blue mb-4">สมุดอวยพรวันเกิด</h3>
+                    <form id="wish-form" onsubmit="submitWish(event)" class="space-y-3 mb-4 bg-gray-50 p-4 rounded-lg border">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">ชื่อผู้ใช้อวยพร *:</label>
+                            <input type="text" id="wish-name" required class="w-full text-xs p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">ข้อความอวยพร *:</label>
+                            <textarea id="wish-msg" required rows="2" class="w-full text-xs p-2 border rounded"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-900 mb-1">URL ลิงก์เพลงประกอบคำอวยพร (ถ้ามี):</label>
+                            <input type="url" id="wish-song-url" placeholder="https://example.com/song.mp3" class="w-full text-xs p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-purple-900 mb-1">อัปโหลดรูปภาพอวยพร (เลือกจากเครื่อง):</label>
+                            <input type="file" id="wish-photo-files" accept="image/*" multiple class="w-full text-[11px] bg-white border p-1 rounded">
+                        </div>
+                        <button type="submit" class="w-full bg-sgs-blue text-white font-bold text-xs py-2 rounded shadow">บันทึกคำอวยพร</button>
+                    </form>
+                    <div id="wishes-list" class="space-y-3 max-h-80 overflow-y-auto"></div>
+                </section>
+            </div>
+
+            <!-- GALLERY & QR CODE -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <section id="gallery-section" class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 p-6 scroll-mt-20">
+                    <div class="border-b pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h3 class="text-xl font-bold font-kanit text-sgs-blue">แกลเลอรีภาพความทรงจำ</h3>
+                            <p class="text-xs text-gray-500">สามารถเพิ่มหรือลบรูปภาพแกลเลอรีได้ที่นี่</p>
+                        </div>
+                        <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded shadow transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>เพิ่มรูปภาพในแกลเลอรี</span>
+                            <input type="file" id="gallery-upload-input" accept="image/*" multiple class="hidden" onchange="uploadGalleryImages(event)">
+                        </label>
+                    </div>
+                    <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+                </section>
+
+                <section id="qrcode-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center justify-between text-center scroll-mt-20">
+                    <div class="w-full">
+                        <div class="border-b pb-3 mb-4">
+                            <h3 class="text-xl font-bold font-kanit text-sgs-blue flex items-center justify-center">
+                                <i class="fa-solid fa-qrcode text-sgs-accent mr-2"></i> QR Code แชร์พอร์ทัล
+                            </h3>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 inline-block my-2 shadow-inner">
+                            <div id="qrcode-canvas" class="flex justify-center"></div>
+                        </div>
+                    </div>
+                    <div class="w-full mt-4">
+                        <button onclick="copyPortalLink()" class="w-full bg-sgs-blue hover:bg-sgs-navy text-white font-bold text-xs py-2 rounded shadow transition">คัดลอกลิงก์พอร์ทัล</button>
+                        <span id="copy-toast" class="text-[10px] text-emerald-600 font-bold block mt-1 opacity-0 transition-opacity">คัดลอกลิงก์เรียบร้อยแล้ว!</span>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-sgs-navy text-white text-xs py-4 border-t-2 border-sgs-accent">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>© 2026 Birthday Portal System. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: Auth (Login & Register) -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border">
+            <div class="bg-sgs-blue text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="auth-modal-title" class="font-bold font-kanit text-lg">เข้าสู่ระบบ</h3>
+                <button onclick="closeAuthModal()" class="text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6">
+                <!-- สลับแท็บ เข้าสู่ระบบ / สมัครสมาชิก -->
+                <div class="flex border-b mb-4">
+                    <button id="auth-tab-login" onclick="switchAuthMode('login')" class="w-1/2 py-2 text-xs font-bold font-kanit border-b-2 border-sgs-blue text-sgs-blue">เข้าสู่ระบบ</button>
+                    <button id="auth-tab-register" onclick="switchAuthMode('register')" class="w-1/2 py-2 text-xs font-bold font-kanit text-gray-500 border-b-2 border-transparent">สมัครสมาชิก</button>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">ชื่อผู้ใช้งาน (Username):</label>
+                        <input type="text" id="auth-username" required class="w-full text-xs p-2.5 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">รหัสผ่าน (Password):</label>
+                        <input type="password" id="auth-password" required class="w-full text-xs p-2.5 border rounded">
+                    </div>
+                    
+                    <!-- ฟิลด์เพิ่มเติมเฉพาะตอนสมัครสมาชิก -->
+                    <div id="register-extra-fields" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">ชื่อที่ต้องการให้แสดง (Display Name):</label>
+                            <input type="text" id="auth-displayname" class="w-full text-xs p-2.5 border rounded" placeholder="เช่น สมชาย สดใส">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">วัน/เดือน/ปี เกิดจริง:</label>
+                            <input type="date" id="auth-dob" class="w-full text-xs p-2.5 border rounded">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-sgs-blue text-white font-bold text-xs py-2.5 rounded shadow hover:bg-sgs-navy transition">
+                        เข้าสู่ระบบ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: แก้ไขโปรไฟล์ส่วนตัวของฉัน -->
+    <div id="my-profile-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border font-sarabun">
+            <div class="bg-sgs-blue text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold font-kanit text-lg">แก้ไขโปรไฟล์ของฉัน</h3>
+                <button onclick="closeMyProfileModal()" class="text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleMyProfileSubmit(event)" class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อที่แสดง:</label>
+                    <input type="text" id="profile-edit-name" required class="w-full p-2.5 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">วัน เดือน ปี เกิดจริง:</label>
+                    <input type="date" id="profile-edit-dob" required class="w-full p-2.5 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">URL รูปภาพโปรไฟล์:</label>
+                    <input type="url" id="profile-edit-avatar" class="w-full p-2.5 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">URL เพลงประจำโปรไฟล์ (ใส่ลิงก์ไฟล์เสียง/เพลง):</label>
+                    <input type="url" id="profile-edit-music" placeholder="https://example.com/song.mp3" class="w-full p-2.5 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">ข้อความแนะนำตัว:</label>
+                    <textarea id="profile-edit-bio" rows="2" class="w-full p-2 border rounded"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeMyProfileModal()" class="bg-gray-300 font-bold px-4 py-2 rounded">ยกเลิก</button>
+                    <button type="submit" class="bg-sgs-blue text-white font-bold px-4 py-2 rounded shadow">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Owner Master Control & Member Management -->
+    <div id="owner-master-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 font-sarabun">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden border border-purple-300">
+            <div class="bg-purple-900 text-white px-6 py-4 flex justify-between items-center border-b-4 border-yellow-400">
+                <h3 class="font-bold font-kanit text-lg flex items-center">
+                    <i class="fa-solid fa-crown text-yellow-300 mr-2"></i> ศูนย์ควบคุมระดับ Owner (จัดการสมาชิก เพิ่ม แก้ไข บล็อก ลบ)
+                </h3>
+                <button onclick="closeOwnerMasterControlModal()" class="text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-6 max-h-[80vh] overflow-y-auto text-xs">
+                
+                <!-- ฟอร์มเพิ่มสมาชิกใหม่สำหรับ Owner -->
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <h4 class="font-bold font-kanit text-purple-900 mb-2 text-sm flex items-center">
+                        <i class="fa-solid fa-user-plus mr-1.5 text-purple-700"></i> Owner เพิ่มสมาชิกใหม่เข้าสู่ระบบ
+                    </h4>
+                    <form onsubmit="handleOwnerAddUserSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+                        <input type="text" id="owner-add-username" placeholder="ชื่อผู้ใช้ (Username) *" required class="p-2 border rounded">
+                        <input type="password" id="owner-add-password" placeholder="รหัสผ่าน *" required class="p-2 border rounded">
+                        <input type="text" id="owner-add-displayname" placeholder="ชื่อที่แสดง *" required class="p-2 border rounded">
+                        <select id="owner-add-role" class="p-2 border rounded font-bold">
+                            <option value="User">สิทธิ์: User</option>
+                            <option value="Admin">สิทธิ์: Admin</option>
+                        </select>
+                        <button type="submit" class="sm:col-span-2 md:col-span-4 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded shadow transition mt-1">
+                            + เพิ่มสมาชิกใหม่
+                        </button>
+                    </form>
+                </div>
+
+                <!-- รายชื่อสมาชิกทั้งหมด -->
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h4 class="font-bold font-kanit text-purple-900 mb-3 text-sm">รายชื่อสมาชิกทั้งหมดในระบบ & เครื่องมือบริหารจัดการของ Owner</h4>
+                    <div id="master-users-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Owner Edit Other User Profile -->
+    <div id="owner-edit-user-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border font-sarabun">
+            <div class="bg-purple-800 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold font-kanit text-sm">Owner แก้ไขข้อมูลสมาชิก: <span id="edit-target-username-label"></span></h3>
+                <button onclick="closeOwnerEditUserModal()" class="text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleOwnerEditUserSubmit(event)" class="p-6 space-y-3 text-xs">
+                <input type="hidden" id="owner-edit-target-username">
+                <div>
+                    <label class="block font-bold mb-1">ชื่อที่แสดง:</label>
+                    <input type="text" id="owner-edit-name" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">รหัสผ่าน:</label>
+                    <input type="text" id="owner-edit-password" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">วัน เดือน ปี เกิดจริง:</label>
+                    <input type="date" id="owner-edit-dob" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">URL รูปภาพโปรไฟล์:</label>
+                    <input type="url" id="owner-edit-avatar" class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">URL เพลงประจำโปรไฟล์:</label>
+                    <input type="url" id="owner-edit-music" class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">ข้อความแนะนำตัว:</label>
+                    <textarea id="owner-edit-bio" rows="2" class="w-full p-2 border rounded"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeOwnerEditUserModal()" class="bg-gray-300 font-bold px-3 py-1.5 rounded">ยกเลิก</button>
+                    <button type="submit" class="bg-purple-700 text-white font-bold px-3 py-1.5 rounded shadow">บันทึกการแก้ไขแทนสมาชิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const DEFAULT_USERS = [
+            { username: '00', password: 'O13/10/2552', role: 'Owner', isBlocked: false },
+            { username: 'Admin', password: 'Admin24/09/2553', role: 'Admin', isBlocked: false },
+            { username: 'สมชาย', password: '123', role: 'User', isBlocked: false },
+            { username: 'แพรวพรรณ', password: '123', role: 'User', isBlocked: false }
+        ];
+
+        const DEFAULT_USER_PROFILES = {
+            '00': { name: '00 (Owner)', dob: '2009-10-13', bio: 'เจ้าของพอร์ทัลวันเกิดหลัก', music: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73229.mp3?filename=happy-birthday-155461.mp3', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150' },
+            'Admin': { name: 'Admin ระบบ', dob: '2010-09-24', bio: 'ผู้ดูแลระบบส่วนกลาง', music: '', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150' },
+            'สมชาย': { name: 'สมชาย ใจดี', dob: '2005-05-12', bio: 'เพื่อนสนิทสายลุย', music: '', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
+            'แพรวพรรณ': { name: 'แพรวพรรณ สดใส', dob: '2006-11-20', bio: 'เพื่อนร่วมงานสายกิน', music: '', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' }
+        };
+
+        const DEFAULT_GALLERY = [
+            'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400',
+            'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400',
+            'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400'
+        ];
+
+        let usersDB = JSON.parse(localStorage.getItem('bps_users_db')) || DEFAULT_USERS;
+        let currentUser = JSON.parse(localStorage.getItem('bps_user')) || { username: 'Guest', role: 'User' };
+        let announcements = JSON.parse(localStorage.getItem('bps_announcements')) || [];
+        let wishes = JSON.parse(localStorage.getItem('bps_wishes')) || [];
+        let userProfiles = JSON.parse(localStorage.getItem('bps_user_profiles')) || DEFAULT_USER_PROFILES;
+        let galleryImages = JSON.parse(localStorage.getItem('bps_gallery')) || DEFAULT_GALLERY;
+        let candles = [true, true, true, true, true];
+        let selectedProfileUser = '00';
+        let currentAuthMode = 'login'; // 'login' หรือ 'register'
+
+        window.onload = function() {
+            updateUserUI();
+            renderCandles();
+            renderAnnouncements();
+            renderWishes();
+            renderGiftBoxes();
+            renderProfileTabs();
+            renderGallery();
+            generateQRCode();
+        };
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function verifySecretWishCode() {
+            const codeInput = document.getElementById('guest-secret-code').value.trim();
+            if (codeInput === '00' || codeInput === 'O13/10/2552' || codeInput === 'birthday2026') {
+                alert("🔓 ยืนยันรหัสถูกต้อง! เข้าสู่แดชบอร์ดพอร์ทัลพิเศษ");
+                enterPortalSection('dashboard');
+            } else {
+                alert("❌ รหัสคำอวยพรไม่ถูกต้อง");
+            }
+        }
+
+        function updateUserUI() {
+            const badge = document.getElementById('user-badge');
+            const authNavBtns = document.getElementById('auth-nav-btns');
+            const roleBadge = document.getElementById('user-role-badge');
+            const nameDisplay = document.getElementById('user-name-display');
+            const addAnnounceBtn = document.getElementById('add-announce-btn');
+            const ownerDashboardMenuBtn = document.getElementById('owner-dashboard-menu-btn');
+            const overlay = document.getElementById('login-required-overlay');
+            const protectedContent = document.getElementById('dashboard-protected-content');
+
+            const isLoggedIn = currentUser && currentUser.username !== 'Guest';
+
+            if (isLoggedIn) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+                if (authNavBtns) authNavBtns.classList.add('hidden');
+                nameDisplay.textContent = currentUser.username;
+                roleBadge.textContent = currentUser.role;
+
+                if (currentUser.role === 'Owner') {
+                    roleBadge.className = "font-bold mr-1.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-600 text-white";
+                    if (ownerDashboardMenuBtn) ownerDashboardMenuBtn.classList.remove('hidden');
+                    if (addAnnounceBtn) addAnnounceBtn.classList.remove('hidden');
+                } else if (currentUser.role === 'Admin') {
+                    roleBadge.className = "font-bold mr-1.5 px-1.5 py-0.5 rounded text-[10px] bg-blue-600 text-white";
+                    if (ownerDashboardMenuBtn) ownerDashboardMenuBtn.classList.add('hidden');
+                    if (addAnnounceBtn) addAnnounceBtn.classList.add('hidden');
+                } else {
+                    roleBadge.className = "font-bold mr-1.5 px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white";
+                    if (ownerDashboardMenuBtn) ownerDashboardMenuBtn.classList.add('hidden');
+                    if (addAnnounceBtn) addAnnounceBtn.classList.add('hidden');
+                }
+
+                if (overlay) overlay.classList.add('hidden');
+                if (protectedContent) protectedContent.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+                if (authNavBtns) authNavBtns.classList.remove('hidden');
+                if (addAnnounceBtn) addAnnounceBtn.classList.add('hidden');
+                if (ownerDashboardMenuBtn) ownerDashboardMenuBtn.classList.add('hidden');
+                if (overlay) overlay.classList.remove('hidden');
+                if (protectedContent) protectedContent.classList.add('hidden');
+            }
+            renderProfileTabs();
+        }
+
+        // --- ระบบ Authentication (เข้าสู่ระบบ / สมัครสมาชิก) ---
+        function switchAuthMode(mode) {
+            currentAuthMode = mode;
+            const title = document.getElementById('auth-modal-title');
+            const tabLogin = document.getElementById('auth-tab-login');
+            const tabRegister = document.getElementById('auth-tab-register');
+            const extraFields = document.getElementById('register-extra-fields');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            if (mode === 'register') {
+                title.textContent = 'สมัครสมาชิกใหม่';
+                tabLogin.className = 'w-1/2 py-2 text-xs font-bold font-kanit text-gray-500 border-b-2 border-transparent';
+                tabRegister.className = 'w-1/2 py-2 text-xs font-bold font-kanit border-b-2 border-emerald-600 text-emerald-600';
+                extraFields.classList.remove('hidden');
+                submitBtn.textContent = 'สมัครสมาชิก';
+                submitBtn.className = 'w-full bg-emerald-600 text-white font-bold text-xs py-2.5 rounded shadow hover:bg-emerald-700 transition';
+            } else {
+                title.textContent = 'เข้าสู่ระบบ';
+                tabLogin.className = 'w-1/2 py-2 text-xs font-bold font-kanit border-b-2 border-sgs-blue text-sgs-blue';
+                tabRegister.className = 'w-1/2 py-2 text-xs font-bold font-kanit text-gray-500 border-b-2 border-transparent';
+                extraFields.classList.add('hidden');
+                submitBtn.textContent = 'เข้าสู่ระบบ';
+                submitBtn.className = 'w-full bg-sgs-blue text-white font-bold text-xs py-2.5 rounded shadow hover:bg-sgs-navy transition';
+            }
+        }
+
+        function openAuthModal(mode) {
+            switchAuthMode(mode);
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-form').reset();
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+
+            if (currentAuthMode === 'register') {
+                // ระบบสมัครสมาชิก
+                if (usersDB.some(u => u.username === username)) {
+                    alert("❌ ชื่อผู้ใช้งานนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น");
+                    return;
+                }
+
+                const displayName = document.getElementById('auth-displayname').value.trim() || username;
+                const dob = document.getElementById('auth-dob').value || '';
+
+                // บันทึกยูสเซอร์ใหม่
+                const newUser = { username, password, role: 'User', isBlocked: false };
+                usersDB.push(newUser);
+                localStorage.setItem('bps_users_db', JSON.stringify(usersDB));
+
+                // สร้างโปรไฟล์เริ่มต้น
+                userProfiles[username] = {
+                    name: displayName,
+                    dob: dob,
+                    bio: 'สมาชิกพอร์ทัลวันเกิด',
+                    music: '',
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+                };
+                localStorage.setItem('bps_user_profiles', JSON.stringify(userProfiles));
+
+                alert("🎉 สมัครสมาชิกสำเร็จ! ระบบกำลังนำคุณเข้าสู่ระบบอัตโนมัติ");
+                currentUser = { username: newUser.username, role: newUser.role };
+                localStorage.setItem('bps_user', JSON.stringify(currentUser));
+            } else {
+                // ระบบเข้าสู่ระบบ
+                const matched = usersDB.find(u => u.username === username && u.password === password);
+                if (!matched) {
+                    alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+                    return;
+                }
+                if (matched.isBlocked) {
+                    alert("🚫 บัญชีนี้ถูกระงับการใช้งาน (Block) โดย Owner");
+                    return;
+                }
+
+                currentUser = { username: matched.username, role: matched.role };
+                localStorage.setItem('bps_user', JSON.stringify(currentUser));
+                alert("✅ เข้าสู่ระบบสำเร็จ!");
+            }
+
+            updateUserUI();
+            closeAuthModal();
+            enterPortalSection('dashboard');
+        }
+
+        function logout() {
+            currentUser = { username: 'Guest', role: 'User' };
+            localStorage.removeItem('bps_user');
+            updateUserUI();
+            alert("ออกจากระบบเรียบร้อยแล้ว");
+        }
+
+        // --- ระบบโปรไฟล์แยกบุคคล ---
+        function renderProfileTabs() {
+            const container = document.getElementById('profile-tabs-container');
+            const displayArea = document.getElementById('profile-display-area');
+            if (!container || !displayArea) return;
+
+            container.innerHTML = '';
+            const allUsers = Object.keys(userProfiles);
+            if (!allUsers.includes(selectedProfileUser)) selectedProfileUser = allUsers[0] || '00';
+
+            allUsers.forEach(uname => {
+                const btn = document.createElement('button');
+                const isSelected = (uname === selectedProfileUser);
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold font-kanit transition flex items-center space-x-1.5 ${isSelected ? 'bg-sgs-blue text-white shadow' : 'bg-white text-gray-700 border hover:bg-gray-100'}`;
+                btn.innerHTML = `<i class="fa-solid fa-user-circle"></i> <span>${escapeHtml(userProfiles[uname].name || uname)}</span>`;
+                btn.onclick = () => { selectedProfileUser = uname; renderProfileTabs(); };
+                container.appendChild(btn);
+            });
+
+            const profile = userProfiles[selectedProfileUser] || { name: selectedProfileUser, dob: '-', bio: '-', music: '', avatar: '' };
+            let musicWidget = `<p class="text-xs text-gray-500 italic">ยังไม่มีเพลงประจำโปรไฟล์นี้</p>`;
+            if (profile.music) {
+                musicWidget = `
+                    <div class="mt-3 bg-white p-3 rounded-lg border border-blue-200 shadow-xs flex items-center space-x-3">
+                        <i class="fa-solid fa-compact-disc text-sgs-accent text-2xl animate-spin"></i>
+                        <div class="w-full">
+                            <span class="text-xs font-bold text-sgs-blue block mb-1">เพลงประจำโปรไฟล์</span>
+                            <audio controls class="w-full h-8 text-xs"><source src="${escapeHtml(profile.music)}"></audio>
+                        </div>
+                    </div>
+                `;
+            }
+
+            displayArea.innerHTML = `
+                <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                    <img src="${profile.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}" class="w-20 h-20 rounded-full object-cover border-2 border-sgs-blue shadow" alt="Avatar">
+                    <div class="space-y-1 w-full text-center sm:text-left">
+                        <h4 class="font-bold text-sgs-blue font-kanit text-base">${escapeHtml(profile.name || selectedProfileUser)}</h4>
+                        <p class="text-xs text-gray-700 font-semibold"><i class="fa-solid fa-cake-candles text-pink-500 mr-1"></i> วันเกิดจริง: ${escapeHtml(profile.dob || 'ไม่ได้ระบุ')}</p>
+                        <p class="text-xs text-gray-600 bg-white/70 p-2 rounded border border-blue-100">${escapeHtml(profile.bio || 'ยังไม่มีคำอธิบายโปรไฟล์')}</p>
+                        ${musicWidget}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openMyProfileModal() {
+            if (currentUser.username === 'Guest') { alert("กรุณาเข้าสู่ระบบก่อน"); openAuthModal('login'); return; }
+            if (!userProfiles[currentUser.username]) {
+                userProfiles[currentUser.username] = { name: currentUser.username, dob: '', bio: '', music: '', avatar: '' };
+            }
+            const profile = userProfiles[currentUser.username];
+            document.getElementById('profile-edit-name').value = profile.name || currentUser.username;
+            document.getElementById('profile-edit-dob').value = profile.dob || '';
+            document.getElementById('profile-edit-avatar').value = profile.avatar || '';
+            document.getElementById('profile-edit-music').value = profile.music || '';
+            document.getElementById('profile-edit-bio').value = profile.bio || '';
+            document.getElementById('my-profile-modal').classList.remove('hidden');
+        }
+
+        function closeMyProfileModal() { document.getElementById('my-profile-modal').classList.add('hidden'); }
+
+        function handleMyProfileSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('profile-edit-name').value.trim();
+            const dob = document.getElementById('profile-edit-dob').value;
+            const avatar = document.getElementById('profile-edit-avatar').value.trim();
+            const music = document.getElementById('profile-edit-music').value.trim();
+            const bio = document.getElementById('profile-edit-bio').value.trim();
+
+            userProfiles[currentUser.username] = { name, dob, avatar, music, bio };
+            localStorage.setItem('bps_user_profiles', JSON.stringify(userProfiles));
+
+            alert("บันทึกโปรไฟล์เรียบร้อย!");
+            selectedProfileUser = currentUser.username;
+            closeMyProfileModal();
+            renderProfileTabs();
+        }
+
+        // --- ศูนย์ควบคุม Owner (เพิ่ม บล็อก ลบ แก้ไขสมาชิก) ---
+        function openOwnerMasterControlModal() {
+            if (currentUser.role !== 'Owner') { alert("❌ เฉพาะสิทธิ์ Owner เท่านั้นที่สามารถเข้าถึงส่วนนี้ได้"); return; }
+            renderOwnerMasterUsersList();
+            document.getElementById('owner-master-modal').classList.remove('hidden');
+        }
+        function closeOwnerMasterControlModal() { document.getElementById('owner-master-modal').classList.add('hidden'); }
+
+        function renderOwnerMasterUsersList() {
+            const listContainer = document.getElementById('master-users-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+
+            usersDB.forEach(u => {
+                const profile = userProfiles[u.username] || { name: u.username, dob: 'ไม่ระบุ' };
+                const isBlocked = u.isBlocked;
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-lg border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 ${isBlocked ? 'bg-red-50 border-red-200' : 'bg-white'}`;
+                div.innerHTML = `
+                    <div>
+                        <span class="font-bold text-sgs-blue text-sm">${escapeHtml(profile.name)} (${escapeHtml(u.username)})</span>
+                        <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-800 font-bold">${u.role}</span>
+                        ${isBlocked ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold">ถูกบล็อก (Blocked)</span>' : ''}
+                        <p class="text-[11px] text-gray-500 mt-0.5">วันเกิดจริง: ${profile.dob || 'ไม่ได้ระบุ'} | รหัสผ่าน: ${u.password}</p>
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="ownerOpenEditUser('${u.username}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-[11px] font-bold"><i class="fa-solid fa-pen-to-square"></i> แก้ไข</button>
+                        <button onclick="ownerToggleBlockUser('${u.username}')" class="${isBlocked ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1 rounded text-[11px] font-bold">
+                            ${isBlocked ? '<i class="fa-solid fa-lock-open"></i> ปลดบล็อก' : '<i class="fa-solid fa-ban"></i> บล็อก'}
+                        </button>
+                        ${u.username !== '00' ? `<button onclick="ownerDeleteUser('${u.username}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-[11px] font-bold"><i class="fa-solid fa-trash"></i> ลบ</button>` : ''}
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function handleOwnerAddUserSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('owner-add-username').value.trim();
+            const password = document.getElementById('owner-add-password').value.trim();
+            const displayName = document.getElementById('owner-add-displayname').value.trim();
+            const role = document.getElementById('owner-add-role').value;
+
+            if (usersDB.some(u => u.username === username)) {
+                alert("❌ มีชื่อผู้ใช้นี้ในระบบแล้ว");
+                return;
+            }
+
+            usersDB.push({ username, password, role, isBlocked: false });
+            localStorage.setItem('bps_users_db', JSON.stringify(usersDB));
+
+            userProfiles[username] = {
+                name: displayName,
+                dob: '',
+                bio: 'สมาชิกเพิ่มโดย Owner',
+                music: '',
+                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+            };
+            localStorage.setItem('bps_user_profiles', JSON.stringify(userProfiles));
+
+            alert(`✅ เพิ่มสมาชิกใหม่ "${username}" เรียบร้อยแล้ว`);
+            e.target.reset();
+            renderOwnerMasterUsersList();
+            renderProfileTabs();
+        }
+
+        function ownerOpenEditUser(username) {
+            const userAcc = usersDB.find(u => u.username === username);
+            if (!userProfiles[username]) {
+                userProfiles[username] = { name: username, dob: '', bio: '', music: '', avatar: '' };
+            }
+            const profile = userProfiles[username];
+            document.getElementById('owner-edit-target-username').value = username;
+            document.getElementById('edit-target-username-label').textContent = username;
+            document.getElementById('owner-edit-name').value = profile.name || username;
+            document.getElementById('owner-edit-password').value = userAcc ? userAcc.password : '';
+            document.getElementById('owner-edit-dob').value = profile.dob || '';
+            document.getElementById('owner-edit-avatar').value = profile.avatar || '';
+            document.getElementById('owner-edit-music').value = profile.music || '';
+            document.getElementById('owner-edit-bio').value = profile.bio || '';
+
+            document.getElementById('owner-edit-user-modal').classList.remove('hidden');
+        }
+        function closeOwnerEditUserModal() { document.getElementById('owner-edit-user-modal').classList.add('hidden'); }
+
+        function handleOwnerEditUserSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('owner-edit-target-username').value;
+            const name = document.getElementById('owner-edit-name').value.trim();
+            const password = document.getElementById('owner-edit-password').value.trim();
+            const dob = document.getElementById('owner-edit-dob').value;
+            const avatar = document.getElementById('owner-edit-avatar').value.trim();
+            const music = document.getElementById('owner-edit-music').value.trim();
+            const bio = document.getElementById('owner-edit-bio').value.trim();
+
+            // อัปเดตรหัสผ่าน
+            usersDB = usersDB.map(u => {
+                if (u.username === username) u.password = password;
+                return u;
+            });
+            localStorage.setItem('bps_users_db', JSON.stringify(usersDB));
+
+            // อัปเดตโปรไฟล์
+            userProfiles[username] = { name, dob, avatar, music, bio };
+            localStorage.setItem('bps_user_profiles', JSON.stringify(userProfiles));
+
+            alert(`✅ Owner บันทึกแก้ไขโปรไฟล์ของสมาชิก "${username}" เรียบร้อยแล้ว!`);
+            closeOwnerEditUserModal();
+            renderOwnerMasterUsersList();
+            renderProfileTabs();
+        }
+
+        function ownerToggleBlockUser(username) {
+            if (username === '00') { alert("ไม่สามารถบล็อกบัญชี Owner หลักได้"); return; }
+            usersDB = usersDB.map(u => {
+                if (u.username === username) u.isBlocked = !u.isBlocked;
+                return u;
+            });
+            localStorage.setItem('bps_users_db', JSON.stringify(usersDB));
+            renderOwnerMasterUsersList();
+        }
+
+        function ownerDeleteUser(username) {
+            if (username === '00') { alert("ไม่สามารถลบบัญชี Owner หลักได้"); return; }
+            if (!confirm(`⚠️ ยืนยันต้องการลบบัญชีผู้ใช้ "${username}" ออกจากระบบถาวรใช่หรือไม่?`)) return;
+
+            usersDB = usersDB.filter(u => u.username !== username);
+            localStorage.setItem('bps_users_db', JSON.stringify(usersDB));
+
+            delete userProfiles[username];
+            localStorage.setItem('bps_user_profiles', JSON.stringify(userProfiles));
+
+            alert(`🗑️ ลบบัญชี "${username}" เรียบร้อยแล้ว`);
+            renderOwnerMasterUsersList();
+            renderProfileTabs();
+        }
+
+        // --- ระบบเค้ก & เป่าเทียน ---
+        function renderCandles() {
+            const container = document.getElementById('candles-container');
+            if (!container) return;
+            container.innerHTML = '';
+            candles.forEach((isLit, idx) => {
+                const candleDiv = document.createElement('div');
+                candleDiv.className = 'flex flex-col items-center cursor-pointer transition transform hover:scale-105';
+                candleDiv.onclick = () => { candles[idx] = !candles[idx]; renderCandles(); };
+                const flameDiv = document.createElement('div');
+                flameDiv.className = isLit ? 'flame mb-1' : 'w-3 h-5 mb-1 opacity-0';
+                const bodyDiv = document.createElement('div');
+                bodyDiv.className = 'w-3 h-12 bg-gradient-to-r from-yellow-200 via-pink-200 to-yellow-300 border border-yellow-400 rounded-t-sm shadow-sm';
+                candleDiv.appendChild(flameDiv);
+                candleDiv.appendChild(bodyDiv);
+                container.appendChild(candleDiv);
+            });
+        }
+        function relightAllCandles() { candles = candles.map(() => true); renderCandles(); }
+        function extinguishAllCandles() { candles = candles.map(() => false); renderCandles(); }
+
+        // --- ประกาศข่าวสาร ---
+        function renderAnnouncements() {
+            const list = document.getElementById('announcement-list');
+            if (!list) return;
+            list.innerHTML = announcements.length === 0 ? `<p class="text-xs text-gray-500 text-center py-4">ไม่มีประกาศ</p>` : '';
+            announcements.forEach(item => {
+                list.innerHTML += `<div class="bg-gray-50 border p-3 rounded-lg"><h4 class="font-bold text-sgs-blue text-xs">${escapeHtml(item.title)}</h4><p class="text-xs text-gray-600">${escapeHtml(item.body)}</p></div>`;
+            });
+        }
+        function openAnnounceModal() { if (currentUser.role === 'Owner') alert("ฟังก์ชันเพิ่มประกาศ"); }
+
+        // --- มินิเกม ---
+        function renderGiftBoxes() {
+            const container = document.getElementById('gift-boxes-container');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                container.innerHTML += `<button onclick="alert('🎁 เปิดกล่องสำเร็จ!')" class="bg-amber-100 border-2 border-amber-300 rounded-xl p-4 flex flex-col items-center"><i class="fa-solid fa-box-archive text-3xl text-amber-600"></i><span class="text-[10px] font-bold">กล่องที่ ${i+1}</span></button>`;
+            }
+        }
+
+        // --- สมุดอวยพร ---
+        function renderWishes() {
+            const list = document.getElementById('wishes-list');
+            if (!list) return;
+            list.innerHTML = wishes.length === 0 ? `<p class="text-xs text-gray-400 text-center py-2">ยังไม่มีคำอวยพร</p>` : '';
+            wishes.forEach(item => {
+                let photosHtml = '';
+                if (item.photos && item.photos.length > 0) {
+                    photosHtml = `<div class="grid grid-cols-2 gap-1.5 my-2">`;
+                    item.photos.forEach(p => { photosHtml += `<img src="${p}" class="w-full h-24 object-cover rounded border">`; });
+                    photosHtml += `</div>`;
+                }
+
+                let songHtml = '';
+                if (item.songUrl) {
+                    songHtml = `
+                        <div class="mt-2 bg-blue-50 p-2 rounded border border-blue-200">
+                            <span class="text-[11px] font-bold text-sgs-blue block mb-1"><i class="fa-solid fa-music text-sgs-accent mr-1"></i> เพลงประจำคำอวยพร</span>
+                            <audio controls class="w-full h-7 text-xs"><source src="${escapeHtml(item.songUrl)}"></audio>
+                        </div>
+                    `;
+                }
+
+                list.innerHTML += `
+                    <div class="bg-white border p-3 rounded-lg text-xs space-y-1">
+                        <div class="font-bold text-sgs-blue"><i class="fa-solid fa-user-circle mr-1"></i>${escapeHtml(item.name)}</div>
+                        <p class="text-gray-800">${escapeHtml(item.msg)}</p>
+                        ${songHtml}
+                        ${photosHtml}
+                    </div>
+                `;
+            });
+        }
+
+        async function submitWish(e) {
+            e.preventDefault();
+            const name = document.getElementById('wish-name').value.trim();
+            const msg = document.getElementById('wish-msg').value.trim();
+            const songUrl = document.getElementById('wish-song-url').value.trim();
+            let photos = [];
+            const photoFiles = document.getElementById('wish-photo-files').files;
+            if (photoFiles.length > 0) {
+                for (let i = 0; i < photoFiles.length; i++) {
+                    const b64 = await readFileAsBase64(photoFiles[i]);
+                    photos.push(b64);
+                }
+            }
+            wishes.unshift({ id: Date.now(), name, msg, songUrl, photos, likes: 0 });
+            localStorage.setItem('bps_wishes', JSON.stringify(wishes));
+            renderWishes();
+            document.getElementById('wish-form').reset();
+            alert("บันทึกคำอวยพรและเพลงเรียบร้อย!");
+        }
+
+        // --- แกลเลอรีรูปภาพ ---
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            if (galleryImages.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-xs text-gray-400 py-6">ยังไม่มีรูปภาพในแกลเลอรี คุณสามารถกดเพิ่มรูปภาพได้</p>`;
+                return;
+            }
+
+            galleryImages.forEach((imgSrc, idx) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'relative group rounded-lg overflow-hidden border shadow-xs bg-gray-100 aspect-square';
+                itemDiv.innerHTML = `
+                    <img src="${imgSrc}" class="w-full h-full object-cover transition transform duration-300 group-hover:scale-105" alt="Gallery Image ${idx + 1}">
+                    <button onclick="deleteGalleryImage(${idx})" class="absolute top-1.5 right-1.5 bg-red-600 hover:bg-red-700 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md transition transform hover:scale-110 opacity-90 group-hover:opacity-100" title="ลบรูปภาพนี้">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                `;
+                grid.appendChild(itemDiv);
+            });
+        }
+
+        async function uploadGalleryImages(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            for (let i = 0; i < files.length; i++) {
+                const b64 = await readFileAsBase64(files[i]);
+                galleryImages.unshift(b64);
+            }
+
+            localStorage.setItem('bps_gallery', JSON.stringify(galleryImages));
+            renderGallery();
+            alert(`✅ เพิ่มรูปภาพเข้าสู่แกลเลอรีสำเร็จเรียบร้อยแล้ว (${files.length} รูป)`);
+            e.target.value = '';
+        }
+
+        function deleteGalleryImage(index) {
+            if (confirm("⚠️ ยืนยันว่าต้องการลบรูปภาพนี้ออกจากแกลเลอรีหรือไม่?")) {
+                galleryImages.splice(index, 1);
+                localStorage.setItem('bps_gallery', JSON.stringify(galleryImages));
+                renderGallery();
+            }
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = err => reject(err);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function toggleBGM() {
+            const audio = document.getElementById('bgm-player');
+            if (audio.paused) audio.play(); else audio.pause();
+        }
+
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrcode-canvas');
+            if (!qrContainer) return;
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: window.location.href,
+                width: 120, height: 120,
+                colorDark : "#003366", colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function copyPortalLink() {
+            navigator.clipboard.writeText(window.location.href);
+            const t = document.getElementById('copy-toast');
+            if (t) {
+                t.classList.remove('opacity-0');
+                setTimeout(() => t.classList.add('opacity-0'), 2000);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function showLandingView() { document.getElementById('portal-landing-view').classList.remove('hidden'); }
+        function enterPortalSection(sectionId) {
+            document.getElementById('portal-landing-view').classList.add('hidden');
+            if (sectionId && sectionId !== 'dashboard') scrollToSection(sectionId);
+        }
+    </script>
+</body>
+</html>
